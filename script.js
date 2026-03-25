@@ -993,8 +993,18 @@ async function renderDashboard() {
         <div class="new-admin-card" onclick="openCoursePlayer('${c.id}')">
             <div class="nac-img-wrapper"><img src="${c.thumb}"></div>
             <div class="nac-content">
-                <div class="nac-top-row"><h3 class="nac-title">${c.title}</h3><div class="nac-badge ${isFree ? 'free' : 'paid'}">${isFree ? 'Free' : 'Paid'}</div></div>
-                <div class="nac-mid-row"><div class="nac-files">${filesHTML}</div></div>
+                <div class="nac-top-row">
+                    <h3 class="nac-title">${c.title}</h3>
+                    <div class="nac-badge ${isFree ? 'free' : 'paid'}">${isFree ? 'Free' : 'Paid'}</div>
+                </div>
+                <p class="nac-desc">${c.desc || "Learn more about this course..."}</p>
+                
+                <div class="nac-mid-row">
+                    <div class="nac-files">${filesHTML}</div>
+                    <div class="nac-price-tag" style="color: ${isFree ? '#00ff41' : '#fff'}; font-size: 1.1rem; font-weight: 600;">
+                        ${isFree ? 'Free' : '₹' + c.price}
+                    </div>
+                </div>
             </div>
         </div>`;
     });
