@@ -478,30 +478,96 @@ async function finalizeUserCreation(flow) {
 // ===============================
 // RAZORPAY & TRANSACTIONS
 // ===============================
-function payWithRazorpay() {
-    var options = {
-        "key": "rzp_test_SOagilh6j038Ec", "amount": "49900", "currency": "INR",
-        "name": "Pax Learnify", "description": "Account Creation Fee",
-        "image": "https://uploads.onecompiler.io/4444s4cvz/44d69n6eu/1000014528.png",
-        "handler": async function (response) {
-            showPremiumModal("Processing...", "Payment verified! Creating account...", "alert");
-            try {
-                await db.from('transactions').insert([{
-                    email: tempRegisterData.email, amount: 499,
-                    paymentId: response.razorpay_payment_id, status: "Success", timestamp: Date.now()
-                }]);
-                finalizeUserCreation('user');
-            } catch (error) { showPremiumModal("Error", "Payment successful, but failed to save record.", "alert"); }
-        },
-        "prefill": { "name": tempRegisterData.name, "email": tempRegisterData.email },
-        "theme": { "color": "#8e2de2" }
-    };
-    var rzp1 = new Razorpay(options);
-    rzp1.on('payment.failed', function (response){ showPremiumModal("Payment Failed", "Reason: " + response.error.description, "alert"); });
-    rzp1.open();
+ async function payWithRazorpay() {
+
+    try {
+        showPremiumModal("Initializing...", "Preparing payment...", "progress");
+
+        // 🔥 STEP 1: Create Order (FAKE for now - backend recommended)
+        const order = {
+            id: "order_" + Date.now(),   // temporary (backend me real order banana chahiye)
+            amount: 49900
+        };
+
+        var options = {
+            key: "rzp_test_SOagilh6j038Ec",
+            amount: order.amount,
+            currency: "INR",
+            name: "Pax Learnify",
+            description: "Account Creation Fee",
+            order_id: order.id,   // 🔥 IMPORTANT
+            image: "https://uploads.onecompiler.io/4444s4cvz/44d69n6eu/1000014528.png",
+
+            handler: async function (response) {
+                try {
+                    showPremiumModal("Verifying...", "Please wait...", "progress");
+
+                    console.log("Payment Success Response:", response);
+
+                    // 🔥 (Optional but better) Fake verification success
+                    const isValid = response.razorpay_payment_id ? true : false;
+
+                    if (!isValid) {
+                        showPremiumModal("Payment Failed", "Verification failed", "alert");
+                        return;
+                    }
+
+                    // ✅ SAVE TRANSACTION
+                    await db.from('transactions').insert([{
+                        email: tempRegisterData.email,
+                        amount: 499,
+                        paymentId: response.razorpay_payment_id,
+                        status: "Success",
+                        timestamp: Date.now()
+                    }]);
+
+                    closePremiumModal();
+
+                    // ✅ FINAL STEP
+                    finalizeUserCreation('user');
+
+                } catch (error) {
+                    console.error(error);
+                    showPremiumModal("Error", "Payment done but DB error.", "alert");
+                }
+            },
+
+            prefill: {
+                name: tempRegisterData.name,
+                email: tempRegisterData.email
+            },
+
+            theme: {
+                color: "#8e2de2"
+            }
+        };
+
+        var rzp1 = new Razorpay(options);
+
+        // ❌ FAILURE HANDLER IMPROVED
+        rzp1.on('payment.failed', function (response) {
+            console.log("Payment Failed:", response);
+
+            showPremiumModal(
+                "Payment Failed ❌",
+                `Reason: ${response.error.description}
+Code: ${response.error.code}
+Step: ${response.error.step}`,
+                "alert"
+            );
+        });
+
+        closePremiumModal();
+        rzp1.open();
+
+    } catch (err) {
+        console.error(err);
+        showPremiumModal("Error", "Payment init failed", "alert");
+    }
 }
 
-function buyCourse(courseId, price, title) {
+            
+ function buyCourse(courseId, price, title) {
     var amountInPaise = parseInt(price) * 100; 
     var options = {
         "key": "rzp_test_SOagilh6j038Ec", "amount": amountInPaise.toString(), "currency": "INR",
