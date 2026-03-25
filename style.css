@@ -182,7 +182,7 @@ input:checked + .slider:before { transform: translateX(24px); }
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-.nac-mid-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; }
+.nac-mid-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; margin-bottom: 10px; }
 .nac-files { display: flex; flex-direction: column; gap: 4px; }
 .nac-file-link { color: #00c3ff; text-decoration: underline; font-size: 0.95rem; font-weight: 500; margin: 0; pointer-events: none;}
 .nac-price { color: #999; font-size: 1rem; font-weight: 500; margin-bottom: 2px; }
