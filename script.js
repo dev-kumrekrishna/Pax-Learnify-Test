@@ -567,39 +567,97 @@ Step: ${response.error.step}`,
 }
 
             
- function buyCourse(courseId, price, title) {
-    var amountInPaise = parseInt(price) * 100; 
-    var options = {
-        "key": "rzp_test_SOagilh6j038Ec", "amount": amountInPaise.toString(), "currency": "INR",
-        "name": "Pax Learnify", "description": "Unlock Course: " + title,
-        "image": "https://uploads.onecompiler.io/4444s4cvz/44d69n6eu/1000014528.png",
-        "handler": async function (response) {
-            showPremiumModal("Processing...", "Payment verified! Unlocking your course...", "alert");
-            try {
-                await db.from('transactions').insert([{
-                    userId: currentUser.id, email: currentUser.email || 'N/A',
-                    courseId: courseId, courseTitle: title, amount: price,
-                    paymentId: response.razorpay_payment_id, timestamp: Date.now()
-                }]);
+ async function buyCourse(courseId, price, title) {
 
-                if(!currentUser.purchased) currentUser.purchased = [];
-                currentUser.purchased.push(courseId);
+    try {
+        showPremiumModal("Initializing...", "Preparing payment...", "progress");
 
-                await db.from('users').update({ purchased: currentUser.purchased }).eq('id', currentUser.id);
+        const order = {
+            id: "order_" + Date.now(),
+            amount: parseInt(price) * 100
+        };
 
-                localStorage.setItem('activeUser', JSON.stringify(currentUser));
-                closePremiumModal();
-                showPremiumModal("Success 🎉", "Course Unlocked! You can now access all contents.", "alert");
-                
-                renderUserDashboard(); openCoursePlayer(courseId);
-            } catch (error) { showPremiumModal("Error", "Payment done but database error. Contact Support.", "alert"); }
-        },
-        "prefill": { "name": currentUser.name, "email": currentUser.email || "" },
-        "theme": { "color": "#8e2de2" }
-    };
-    var rzp1 = new Razorpay(options);
-    rzp1.on('payment.failed', function (response){ showPremiumModal("Payment Failed", "Reason: " + response.error.description, "alert"); });
-    rzp1.open();
+        var options = {
+            key: "rzp_test_SOagilh6j038Ec",
+            amount: order.amount,
+            currency: "INR",
+            name: "Pax Learnify",
+            description: "Unlock Course: " + title,
+            order_id: order.id,
+
+            handler: async function (response) {
+                try {
+                    showPremiumModal("Verifying...", "Unlocking course...", "progress");
+
+                    console.log("Course Payment:", response);
+
+                    if (!response.razorpay_payment_id) {
+                        showPremiumModal("Failed", "Payment verification failed", "alert");
+                        return;
+                    }
+
+                    // ✅ SAVE TRANSACTION
+                    await db.from('transactions').insert([{
+                        userId: currentUser.id,
+                        email: currentUser.email || 'N/A',
+                        courseId: courseId,
+                        courseTitle: title,
+                        amount: price,
+                        paymentId: response.razorpay_payment_id,
+                        status: "Success",
+                        timestamp: Date.now()
+                    }]);
+
+                    // ✅ UPDATE USER ACCESS
+                    if (!currentUser.purchased) currentUser.purchased = [];
+                    currentUser.purchased.push(courseId);
+
+                    await db.from('users')
+                        .update({ purchased: currentUser.purchased })
+                        .eq('id', currentUser.id);
+
+                    localStorage.setItem('activeUser', JSON.stringify(currentUser));
+
+                    closePremiumModal();
+                    showPremiumModal("Success 🎉", "Course Unlocked!", "alert");
+
+                    renderUserDashboard();
+                    openCoursePlayer(courseId);
+
+                } catch (err) {
+                    console.error(err);
+                    showPremiumModal("Error", "Payment done but DB error", "alert");
+                }
+            },
+
+            prefill: {
+                name: currentUser.name,
+                email: currentUser.email || ""
+            },
+
+            theme: { color: "#8e2de2" }
+        };
+
+        var rzp1 = new Razorpay(options);
+
+        rzp1.on('payment.failed', function (response) {
+            console.log(response);
+
+            showPremiumModal(
+                "Payment Failed ❌",
+                `Reason: ${response.error.description}
+Code: ${response.error.code}`,
+                "alert"
+            );
+        });
+
+        closePremiumModal();
+        rzp1.open();
+
+    } catch (err) {
+        console.error(err);
+        showPremiumModal("Error", "Payment init failed", "alert");
+    }
 }
 
 // ===============================
