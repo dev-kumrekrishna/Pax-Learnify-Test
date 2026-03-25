@@ -1027,7 +1027,7 @@ async function renderUserDashboard() {
         let hasUnlocked = false; 
         let hasLocked = false;
         
-        // 🔥 FIX 1: Ensure purchased list is strictly a valid Array
+        // Ensure purchased list is strictly a valid Array
         if (!currentUser.purchased || !Array.isArray(currentUser.purchased)) {
             currentUser.purchased = [];
         }
@@ -1035,26 +1035,43 @@ async function renderUserDashboard() {
         courses.forEach(c => {
             const isFree = (c.type === 'free');
             
-            // 🔥 FIX 2: String conversion se strict ID matching
+            // String conversion se strict ID matching
             const isPurchased = currentUser.purchased.some(pId => String(pId) === String(c.id));
             const hasAccess = isFree || isPurchased || currentUser.role === 'admin';
             
+            // File links (Video/Doc) nikalna
+            let filesHTML = c.files ? c.files.map(f => `<div class="nac-file-link">${f.type.includes('pdf') ? 'Doc' : 'Video'}</div>`).join('') : '';
+            
+            // CARD DESIGN 🔥
             const cardHTML = `
             <div class="new-admin-card" onclick="openCoursePlayer('${c.id}')">
                 <div class="nac-img-wrapper"><img src="${c.thumb}"></div>
                 <div class="nac-content">
+                    
                     <div class="nac-top-row">
                         <h3 class="nac-title">${c.title}</h3>
-                        <div class="nac-badge ${isFree ? 'free' : 'paid'}">${isFree ? 'Free' : '₹' + c.price}</div>
+                        <div class="nac-badge ${isFree ? 'free' : 'paid'}">${isFree ? 'Free' : 'Paid'}</div>
                     </div>
-                    <div class="nac-bottom-row" style="margin-top: 15px;">
+                    
+                    <p class="nac-desc">${c.desc || "Learn more about this course..."}</p>
+                    
+                    <div class="nac-mid-row">
+                        <div class="nac-files">${filesHTML}</div>
+                        <div class="nac-price-tag" style="color: ${isFree ? '#00ff41' : '#fff'}; font-size: 1.1rem; font-weight: 600;">
+                            ${isFree ? 'Free' : '₹' + c.price}
+                        </div>
+                    </div>
+                    
+                    <div class="nac-bottom-row" style="margin-top: 10px;">
                         ${hasAccess 
                             ? `<button class="nac-active-btn" style="width:100%; border-radius:10px;">Play Course <i class="fas fa-play"></i></button>` 
                             : `<button class="btn-glow" style="margin:0; padding:10px; font-size:0.9rem; border-radius:10px;">Buy to Unlock</button>`}
                     </div>
+                    
                 </div>
             </div>`;
             
+            // Sort into correct sections
             if (hasAccess) { 
                 unlocked.innerHTML += cardHTML; 
                 hasUnlocked = true; 
@@ -1065,6 +1082,7 @@ async function renderUserDashboard() {
             }
         });
 
+        // Empty states
         if (!hasUnlocked) unlocked.innerHTML = '<div style="color:#aaa; padding:10px;">No unlocked courses yet. Explore below!</div>';
         if (!hasLocked) { 
             locked.innerHTML = '<div style="color:#aaa; padding:10px;">You have unlocked all available courses!</div>'; 
