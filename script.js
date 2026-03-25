@@ -162,6 +162,34 @@ window.adminChangeBanner = async () => {
         showPremiumModal("Error", "Banner update failed.", "alert");
     }
 };
+window.saveCourseDetails = async () => {
+    // Naya text nikalo
+    const newTitle = document.getElementById('playerTitle').innerText.trim();
+    const newDesc = document.getElementById('playerDesc').innerText.trim();
+
+    if (!newTitle) return showPremiumModal("Error", "Title cannot be empty!", "alert");
+
+    showPremiumModal("Saving...", "Updating course details...", "progress");
+
+    try {
+        // Supabase me update karo
+        const { error } = await db.from('courses')
+            .update({ title: newTitle, desc: newDesc })
+            .eq('id', activeCourseId);
+
+        if (error) throw error;
+
+        closePremiumModal();
+        showPremiumModal("Success 🎉", "Course details updated successfully!", "alert");
+        
+        // Refresh player to sync
+        openCoursePlayer(activeCourseId);
+    } catch (e) {
+        console.error("Update Error:", e);
+        closePremiumModal();
+        showPremiumModal("Error", "Could not save details.", "alert");
+    }
+};
 window.deleteCurrentCourse = async () => {
     const confirm = await showPremiumModal("Confirm", "Do you want to delete this ENTIRE course?", "confirm");
     if (!confirm) return;
@@ -793,19 +821,22 @@ function togglePriceInput() {
 
 // ===============================
 // PLAYER & DASHBOARDS
-// ===============================
+// =============================== 
 async function openCoursePlayer(courseId) {
     activeCourseId = courseId;
 
     const courses = await fetchCourses();
-    const course = courses.find(c => c.id === courseId);
+    // 🔥 Safe ID Matching
+    const course = courses.find(c => String(c.id) === String(courseId));
     if (!course) return;
 
     // ===== ACCESS CONTROL =====
-    if (!currentUser.purchased) currentUser.purchased = [];
+    if (!currentUser.purchased || !Array.isArray(currentUser.purchased)) {
+        currentUser.purchased = [];
+    }
 
     const isFree = course.type === 'free';
-    const isPurchased = currentUser.purchased.includes(courseId);
+    const isPurchased = currentUser.purchased.some(pId => String(pId) === String(courseId));
     const isAdmin = currentUser.role === 'admin';
 
     if (!isFree && !isPurchased && !isAdmin) {
@@ -822,9 +853,31 @@ async function openCoursePlayer(courseId) {
     document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
     document.getElementById('coursePlayerView').classList.remove('hidden');
 
-    // ===== BASIC INFO =====
-    document.getElementById('playerTitle').innerText = course.title;
-    document.getElementById('playerDesc').innerText = course.desc || "";
+    // ===== BASIC INFO & EDIT MODE =====
+    const titleEl = document.getElementById('playerTitle');
+    const descEl = document.getElementById('playerDesc');
+    const saveBtn = document.getElementById('saveCourseDetailsBtn');
+
+    titleEl.innerText = course.title;
+    descEl.innerText = course.desc || "";
+
+    // Toggle check safely
+    const toggleEl = document.getElementById('editModeToggle');
+    const isEditMode = toggleEl ? toggleEl.checked : false;
+
+    if (isEditMode && isAdmin) {
+        titleEl.contentEditable = "true";
+        descEl.contentEditable = "true";
+        titleEl.classList.add('editable-field');
+        descEl.classList.add('editable-field');
+        if (saveBtn) saveBtn.classList.remove('hidden');
+    } else {
+        titleEl.contentEditable = "false";
+        descEl.contentEditable = "false";
+        titleEl.classList.remove('editable-field');
+        descEl.classList.remove('editable-field');
+        if (saveBtn) saveBtn.classList.add('hidden');
+    }
 
     // ===== BANNER (cache fix) =====
     const thumb = course.thumb && course.thumb.trim() !== ""
@@ -837,8 +890,6 @@ async function openCoursePlayer(courseId) {
     // ===== FILE LIST =====
     const list = document.getElementById("playerFileList");
     list.innerHTML = "";
-
-    const isEditMode = document.getElementById('editModeToggle').checked;
 
     // ===== EMPTY STATE =====
     if (!course.files || course.files.length === 0) {
@@ -860,17 +911,19 @@ async function openCoursePlayer(courseId) {
                 <i class="fas ${iconClass}"></i> ${file.name}
             </span>
 
-            ${isEditMode ? `
+            ${(isEditMode && isAdmin) ? `
             <button class="file-delete-btn" onclick="deleteSpecificFile(${index})">
                 <i class="fas fa-trash"></i>
             </button>` : ''}
         </div>`;
     });
 
-    // ===== AUTO PLAY FIRST FILE (🔥 PRO UX) =====
+    // ===== AUTO PLAY FIRST FILE =====
     const firstFile = course.files[0];
     if (firstFile) {
-        openFile(firstFile.url, firstFile.type, firstFile.name);
+        setTimeout(() => {
+            openFile(firstFile.url, firstFile.type, firstFile.name);
+        }, 300); 
     }
 }
 
