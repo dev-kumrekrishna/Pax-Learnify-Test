@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pax Learnify</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        var pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("2NeRhM2Q3vvkIMBzG"); 
+       })();
+    </script>
+</head>
+<body>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="mySidebar" class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-header">
+                <h3>Menu</h3>
+                <span class="close-btn" onclick="toggleSidebar()">&times;</span>
+            </div>
+            
+            <div id="publicMenu" class="hidden">
+                <div class="menu-label">Menu</div>
+                <a onclick="navigate('about')"><i class="fas fa-info-circle"></i> About Us</a>
+            </div>
+
+            <div id="adminMenu" class="hidden">
+                <div class="menu-label">Admin Controls</div>
+                <a onclick="navigate('dashboard')"><i class="fas fa-home"></i> Dashboard</a>
+                <a onclick="navigate('users-list')"><i class="fas fa-users"></i> Users List</a>
+                <a onclick="navigate('add-member')"><i class="fas fa-user-plus"></i> Add Member</a>
+                <a onclick="navigate('manage-courses')"><i class="fas fa-book"></i> Manage Courses</a>
+                <a onclick="navigate('earnings')"><i class="fas fa-wallet"></i> Earnings</a>
+                <hr class="menu-divider">
+                <a onclick="navigate('about')"><i class="fas fa-info-circle"></i> About Us</a>
+                <a onclick="logout()" class="logout-link" style="color: #c50000;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+
+            <div id="userMenu" class="hidden">
+                <div class="menu-label">User Controls</div>
+                <a onclick="navigate('dashboard')"><i class="fas fa-home"></i> Dashboard</a>
+                <a onclick="navigate('store')"><i class="fas fa-shopping-bag"></i> Store</a>
+                <a onclick="navigate('referrals')"><i class="fas fa-users"></i> Referrals</a>
+                <a onclick="navigate('settings')"><i class="fas fa-cog"></i> Settings</a>
+                <hr class="menu-divider">
+                <a onclick="navigate('about')"><i class="fas fa-info-circle"></i> About Us</a>
+                <a onclick="logout()" class="logout-link" style="color: #c50009;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="contact-box">
+                <p>Contact Support</p>
+                <a href="mailto:contact.paxlearnify@gmail.com" target="_blank" 
+                class="contact-email">
+                    <i class="fas fa-envelope"></i> contact.paxlearnify@gmail.com
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <header class="glass-header">
+        <div class="header-left">
+            <i class="fas fa-bars menu-icon" onclick="toggleSidebar()"></i>
+            <div class="logo-area">
+                <img src="https://uploads.onecompiler.io/4444s4cvz/44d69n6eu/1000014528.png" class="logo-img" alt="Pax Learnify Logo">
+                <span>Pax Learnify</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <span id="userNameDisplay" class="user-badge">Guest</span>
+            <img id="headerProfilePic" src="https://via.placeholder.com/40" class="profile-thumb hidden">
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="authScreen" class="view-section hidden">
+            <div class="login-card glass-card">
+                <div style="margin-bottom: 20px;">
+                    <img src="https://uploads.onecompiler.io/4444s4cvz/44d69n6eu/1000014528.png" style="width: 80px; height: auto; border-radius: 10px;">
+                </div>
+                <h2>Welcome</h2>
+                <p>Login to <b>Pax Learnify</b></p>
+                <div class="input-group">
+                    <input id="lUser" placeholder="Username">
+                </div>
+                <div class="input-group">
+                    <input id="lPass" type="password" placeholder="Password">
+                </div>
+                <button onclick="handleLogin()" class="btn-glow">LOGIN</button>
+            </div>
+        </div>
+
+        <div id="adminDash" class="view-section hidden">
+            <h2 class="section-title">Dashboard</h2>
+            <div id="verticalCourseSection">
+                <h3 class="section-heading">Your Courses</h3>
+                <div id="verticalCourseSlider" class="vertical-scroll-wrapper"></div>
+            </div>
+            
+            <h3 class="section-subtitle">Overview</h3>
+            <div class="wide-action-card purple-glow" onclick="navigate('manage-courses')">
+                <div class="icon-box"><i class="fas fa-book-open"></i></div>
+                <div class="info"><h3>Manage Courses</h3><p>Add, Edit or Delete Content</p></div><i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="wide-action-card blue-glow" onclick="navigate('users-list')">
+                <div class="icon-box"><i class="fas fa-users"></i></div>
+                <div class="info"><h3>User List</h3><p>View All Members</p></div><i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="wide-action-card orange-glow" onclick="navigate('earnings')">
+                <div class="icon-box"><i class="fas fa-chart-pie"></i></div>
+                <div class="info"><h3>Total Earnings</h3><p>Lifetime: ₹<span id="adEarnings">0</span></p></div><i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="wide-action-card blue-glow" onclick="navigate('add-member')">
+                <div class="icon-box"><i class="fas fa-user-plus"></i></div>
+                <div class="info"><h3>Add Member</h3><p>Manually Register Users</p></div><i class="fas fa-chevron-right arrow"></i>
+            </div>
+        </div>
+
+        <div id="usersListView" class="view-section hidden">
+            <button onclick="navigate('dashboard')" class="btn-back"><i class="fas fa-arrow-left"></i> Back</button>
+            <h2>User Management</h2>
+            <div class="wide-action-card blue-glow" style="cursor: default;">
+                <div class="icon-box"><i class="fas fa-users"></i></div>
+                <div class="info">
+                    <h3>Total Registered Users</h3>
+                    <p>Count: <span id="totalUsersCount" style="color:white; font-weight:bold;">0</span></p>
+                </div>
+            </div>
+            <h3 class="section-subtitle">All Members</h3>
+            <div class="glass-card no-padding">
+                <table id="usersTable">
+                    <thead><tr><th>Name</th><th>Username</th><th>Joined Date</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="manageCoursesView" class="view-section hidden">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <button onclick="navigate('dashboard')" class="btn-back" style="margin: 0; margin-right: 15px;"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 style="margin: 0;">Manage Courses</h2>
+            </div>
+            <div class="wide-action-card blue-glow" onclick="navigate('add-course')" style="cursor: pointer;">
+                <div class="icon-box"><i class="fas fa-plus-circle"></i></div>
+                <div class="info"><h3>Create New Course</h3><p>Add Video, PDF & Details</p></div><i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <h3 style="color: var(--neon-blue); margin: 30px 0 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">All Active Courses</h3>
+            <div id="manageCourseList" style="height: calc(100vh - 350px); overflow-y: auto; padding-right: 5px; padding-bottom: 20px;"></div>
+        </div> 
+
+        <div id="addCourseView" class="view-section hidden">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <button onclick="navigate('manage-courses')" class="btn-back" style="margin: 0; margin-right: 15px;"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 style="margin: 0;">Create Course</h2>
+            </div>
+            <div class="glass-card">
+                <div style="margin-bottom: 15px;">
+                    <label style="color:#aaa; font-size:0.85rem; margin-bottom:5px; display:block;">Course Title</label>
+                    <input id="cTitle" placeholder="e.g. Master Video Editing" style="margin:0;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                     <label style="color:#aaa; font-size:0.85rem; margin-bottom:5px; display:block;">Short Description</label>
+                    <textarea id="cDesc" placeholder="What will students learn?" style="min-height: 80px; margin:0;"></textarea>
+                </div>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label style="color:#aaa; font-size:0.85rem; margin-bottom:5px; display:block;">Type</label>
+                        <select id="cType" onchange="togglePriceInput()" style="margin:0;">
+                            <option value="paid">Paid</option>
+                            <option value="free">Free</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;" id="priceInputContainer">
+                        <label style="color:#aaa; font-size:0.85rem; margin-bottom:5px; display:block;">Price (₹)</label>
+                        <input id="cPrice" type="number" placeholder="499" style="margin:0;">
+                    </div>
+                </div>
+                <label style="color:#aaa; font-size:0.85rem; margin-bottom:8px; display:block;">Cover Image</label>
+                <label class="file-upload-box">
+                    <input type="file" id="cThumb" accept="image/*" hidden onchange="previewFiles('thumb')">
+                    <i class="fas fa-image" style="font-size: 1.5rem; margin-bottom: 5px; color: var(--neon-purple);"></i><br>
+                    <span id="thumbPreviewText" style="font-size: 0.9rem;">Tap to select image</span>
+                </label>
+                <label style="color:#aaa; font-size:0.85rem; margin-bottom:8px; display:block; margin-top: 15px;">Course Content (Videos/PDFs)</label>
+                <label class="file-upload-box">
+                    <input type="file" id="cFiles" multiple hidden onchange="addFilesToDraft()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; margin-bottom: 5px; color: var(--neon-blue);"></i><br>
+                    <span style="font-size: 0.9rem;">Upload Videos or Docs</span>
+                </label>
+                <div id="draftFileList" class="file-list-vertical" style="margin-top: 15px; gap: 10px;"></div>
+                <button class="btn-glow" onclick="createCourse()" style="margin-top: 25px; background: linear-gradient(135deg, var(--neon-purple), var(--deep-blue));">
+                    Publish Course <i class="fas fa-check-circle" style="margin-left:5px;"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="coursePlayerView" class="view-section hidden white-mode-layout">
+            <div class="media-header">
+                <button onclick="navigate('dashboard')" class="player-back-btn"><i class="fas fa-arrow-left"></i></button>
+                <div id="mainMediaContainer" class="media-content"></div>
+                
+            </div>
+            <div id="editToggleSection">
+                <span>Edit Mode</span>
+                <label class="modern-switch">
+                    <input type="checkbox" id="editModeToggle" onchange="toggleEditMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div id="adminToolbar" class="admin-sidebar-tools hidden">
+                <button class="tool-btn" onclick="document.getElementById('addFileInput').click()"><i class="fas fa-plus"></i></button>
+                <button class="tool-btn" onclick="document.getElementById('bannerInput').click()"><i class="fas fa-image"></i></button>
+                <button class="tool-btn trash" onclick="deleteCurrentCourse()"><i class="fas fa-trash-alt"></i></button>
+            </div>
+
+            <input type="file" id="addFileInput" hidden multiple onchange="adminAddFiles()">
+            <input type="file" id="bannerInput" hidden accept="image/*" onchange="adminChangeBanner()">
+<div class="player-body-content">
+
+    <h1 id="playerTitle" class="course-main-title"></h1>
+
+    <div class="description-box">
+        <p id="playerDesc"></p>
+    </div>
+
+    <hr class="divider-line">
+
+    <div id="playerFileList" class="file-list-vertical"></div>
+
+</div>
+                   </div>
+        <div id="addMemberView" class="view-section hidden">
+            <button onclick="navigate('dashboard')" class="btn-back" style="margin: 0; margin-right: 15px;"><i class="fas fa-arrow-left"></i> Back </button>
+            <h2>Add New Member (Admin)</h2>
+            <div class="glass-card centered-card">
+                <div id="amStep1">
+                    <input id="amName" placeholder="Full Name (Mandatory)">
+                    <input id="amEmail" type="email" placeholder="Email (Mandatory)">
+
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                        <p style="margin: 0 0 5px 0; color: #aaa; font-size: 0.85rem;">Human Verification:</p>
+                        <h3 id="amCaptchaText" style="margin: 0 0 10px 0; color: var(--neon-blue); letter-spacing: 2px;">? + ? =</h3>
+                        <input id="amCaptchaInput" type="number" placeholder="Enter answer here" style="text-align: center; width: 60%;">
+                    </div>
+
+                    <button onclick="verifyCaptchaAndSendOTP('admin')" class="btn-glow">Verify & Send OTP</button>
+                </div>
+                
+                <div id="amSuccess" class="hidden">
+                    <h3 style="color: #00ff41;"><i class="fas fa-check-circle"></i> Account Created</h3>
+                    <div style="background: rgba(0,255,65,0.1); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                        <p style="margin: 5px 0; color: #ccc;">Username: <b id="genUser" style="color: #fff;"></b></p>
+                        <p style="margin: 5px 0; color: #ccc;">Password: <b id="genPass" style="color: #fff;"></b></p>
+                    </div>
+                    <button onclick="navigate('users-list')" class="btn-glow" style="margin-top: 20px;">View Users</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="userDash" class="view-section hidden">
+            <div class="wide-action-card blue-glow" onclick="navigate('referrals')" style="cursor: pointer;">
+                <div class="icon-box"><i class="fas fa-user-plus"></i></div>
+                <div class="info"><h3>Add Friend</h3><p></p></div><i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <h2 style="margin-bottom: 20px;">My Learning</h2>
+            <h3 class="status-title success" style="margin-top: 30px;">Unlocked Courses</h3>
+            <div id="userUnlockedCourses" class="vertical-scroll-wrapper"></div>
+            <h3 class="status-title warning" style="margin-top: 30px;">Explore More</h3>
+            <div id="userLockedCourses" class="vertical-scroll-wrapper"></div>
+        </div>
+
+        <div id="userStoreView" class="view-section hidden"><h2>Course Store</h2><div id="storeAllCourses" class="grid-container"></div></div>
+
+        <div id="userReferralsView" class="view-section hidden">
+            <button onclick="navigate('dashboard')" class="btn-back" style="margin: 0; margin-right: 15px;"><i class="fas fa-arrow-left"></i> Back </button>
+            <h2>Invite & Add Friend</h2>
+            <div class="glass-card centered-card">
+                <div id="refStep1">
+                    <div class="price-tag" style="margin-bottom: 15px; display: inline-block; background: rgba(0, 210, 255, 0.1); color: #00d2ff; padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(0,210,255,0.3);">Course Fee: ₹499</div>
+                    <input id="refName" placeholder="Friend's Full Name (Mandatory)">
+                    <input id="refEmail" type="email" placeholder="Friend's Email (Mandatory)">
+
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                        <p style="margin: 0 0 5px 0; color: #aaa; font-size: 0.85rem;">Human Verification:</p>
+                        <h3 id="refCaptchaText" style="margin: 0 0 10px 0; color: var(--neon-blue); letter-spacing: 2px;">? + ? =</h3>
+                        <input id="refCaptchaInput" type="number" placeholder="Enter answer here" style="text-align: center; width: 60%;">
+                    </div>
+
+                    <button onclick="verifyCaptchaAndSendOTP('user')" class="btn-glow">Verify & Send OTP</button>
+                </div>
+               
+                <div id="refStep2" class="hidden" style="text-align: center;">
+                    <h3 style="color: #fff; margin-bottom: 20px;">Complete Payment</h3>
+                    <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 20px;">Pay ₹499 securely to create the account.</p>
+                    
+                    <button onclick="payWithRazorpay()" class="btn-glow" style="background: linear-gradient(135deg, var(--neon-purple), var(--deep-blue)); border-radius: 12px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fas fa-credit-card"></i> Pay ₹499 Securely
+                    </button>
+                </div>
+
+                <div id="refSuccess" class="hidden">
+                    <h3 style="color: #00ff41;"><i class="fas fa-check-circle"></i> Payment Successful!</h3>
+                    <p style="color: #ccc; font-size: 0.9rem;">Your friend's account is ready.</p>
+                    <div style="background: rgba(0,255,65,0.1); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                        <p style="margin: 5px 0; color: #ccc;">Username: <b id="refGenUser" style="color: #fff;"></b></p>
+                        <p style="margin: 5px 0; color: #ccc;">Password: <b id="refGenPass" style="color: #fff;"></b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="userSettingsView" class="view-section hidden">
+            <button onclick="navigate('dashboard')" class="btn-back" style="margin: 0; margin-right: 15px;"><i class="fas fa-arrow-left"></i> Back </button>
+            <h2>Settings</h2>
+            <div class="glass-card centered-card">
+                <label for="editDisplayName" style="display: block; text-align: left; color: #aaa; margin-bottom: 5px;">Display Name</label>
+                <input id="editDisplayName" placeholder="Enter your name" style="margin-top: 0;">
+                <button onclick="saveProfileSettings()" class="btn-glow" style="margin-top: 15px;">Save Name</button>
+            </div>
+            <div style="margin-top: 40px; margin-bottom: 20px;">
+                <h3 class="status-title" style="color: #ff4757; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px;">
+                    <i class="fas fa-exclamation-triangle"></i> Danger Zone
+                </h3>
+                <div class="wide-action-card" style="border: 1px solid rgba(255, 71, 87, 0.4); background: rgba(255, 71, 87, 0.05); cursor: pointer;" onclick="deleteUserAccount()">
+                    <div class="icon-box" style="background: rgba(255, 71, 87, 0.1); color: #ff4757;"><i class="fas fa-trash-alt"></i></div>
+                    <div class="info">
+                        <h3 style="color: #ff4757;">Delete Account</h3>
+                        <p style="color: #aaa; font-size: 0.8rem; line-height: 1.3;">Permanently delete your account. <br><strong style="color: #ff4757;">Note: No refunds will be provided for purchased courses.</strong></p>
+                    </div>
+                    <i class="fas fa-chevron-right arrow" style="color: #ff4757;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div id="earningsView" class="view-section hidden">
+            <button onclick="navigate('dashboard')" class="btn-back" style="margin: 0; margin-right: 15px;"><i class="fas fa-arrow-left"></i> Back </button>
+            <h2>Transactions</h2>
+            <div class="glass-card no-padding"><table id="txnTable"><thead><tr><th>User</th><th>Item</th><th>Amt</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        
+        <div id="aboutView" class="view-section hidden">
+            <button onclick="navigate('dashboard')" class="btn-back" style="margin: 0; margin-right: 15px;"><i class="fas fa-arrow-left"></i> Back</button>
+            <div class="about-container">
+                <h1 class="about-title">About Pax Learnify</h1>
+                <p class="about-text">Pax Learnify is a modern digital learning platform designed to provide high-quality Video and Document based courses at affordable prices.</p>
+                <div class="about-card"><h3>🎯 Our Vision</h3><p>To build a reliable and trusted online learning marketplace where students can buy practical courses without paying overpriced fees.</p></div>
+                <div class="about-card">
+                    <h3>📚 What We Offer</h3>
+                    <ul><li>High-quality Video Courses</li><li>Structured PDF / Document Courses</li><li>Affordable Pricing</li><li>Easy Access Dashboard</li></ul>
+                </div>
+                <div class="about-card"><h3>🔐 Why Choose Us?</h3><p>We focus on reliability, simplicity, and fair pricing. Our goal is to empower creators and learners by offering valuable content at minimal cost.</p></div>
+                <div class="about-highlight">🚀 Learn Smart. Pay Less. Grow Faster.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="premiumModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background-color: rgba(5, 5, 5, 0.85); backdrop-filter: blur(10px); z-index: 999999; display: flex; align-items: center; justify-content: center;">
+        <div class="modal-box" id="pmBox" style="background: #121216; border: 1px solid var(--neon-purple); box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(142, 45, 226, 0.2); border-radius: 20px; padding: 25px; text-align: center; width: 90%; max-width: 380px; transform: scale(0.9); transition: transform 0.3s ease; overflow: hidden;">
+            <h3 id="pmTitle" style="color: #fff; font-size: 1.5rem; margin-top: 5px; margin-bottom: 10px;">Title</h3>
+            <p id="pmMessage" style="color: #bbb; font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px; white-space: pre-wrap;">Message</p>
+            <div id="pmProgressContainer" class="hidden" style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 12px; margin-bottom: 10px; overflow: hidden; border: 1px solid #333;">
+                <div id="pmProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); transition: width 0.3s ease;"></div>
+            </div>
+            <p id="pmProgressText" class="hidden" style="color: var(--neon-blue); font-size: 0.85rem; margin-bottom: 20px; font-weight: 600;">0%</p>
+            <input type="text" id="pmInput" class="hidden" placeholder="Type here..." style="width: 100%; box-sizing: border-box; padding: 14px; margin-bottom: 20px; border-radius: 12px; border: 1px solid #333; background-color: #1a1a24; color: #fff; outline: none; font-size: 1rem;">
+            <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
+                <button id="pmCancelBtn" onclick="closePremiumModal(false)" class="hidden" style="flex: 1; padding: 14px; border-radius: 12px; background-color: #222; color: #aaa; border: 1px solid #444; cursor: pointer; font-weight: 600;">Cancel</button>
+                <button id="pmConfirmBtn" onclick="closePremiumModal(true)" style="flex: 1; padding: 14px; border-radius: 12px; background: linear-gradient(135deg, var(--neon-purple), var(--deep-blue)); color: #fff; border: none; cursor: pointer; font-weight: 600; box-shadow: 0 4px 15px rgba(142,45,226,0.3);">OK</button>
+            </div>
+        </div>
+    </div>
+
+   <div id="documentReaderView" class="hidden">
+    <div class="reader-header">
+        <button class="reader-back-btn" onclick="closeDocumentReader()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <span id="readerDocTitle" style="font-weight:600;">Document</span> </div>
+    <div id="pdfRenderer"></div>
+</div>
+
+    <script src="script.js"></script>
+</body>
+</html>
