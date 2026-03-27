@@ -207,64 +207,114 @@ window.deleteCurrentCourse = async () => {
     }
 };
 window.closePremiumModal = closePremiumModal; window.buyCourse = buyCourse;
-window.renderUserDashboard = renderUserDashboard; window.renderEarnings = renderEarnings;
+window.renderUserDashboard =  renderUserDashboard; 
+window.renderEarnings = renderEarnings;
 window.updateAdminEarningsWidget = updateAdminEarningsWidget;
 window.verifyCaptchaAndSendOTP = verifyCaptchaAndSendOTP;
 window.verifyOTPAndProceed = verifyOTPAndProceed; window.removeDraftFile = removeDraftFile;
-window.openFile = async (url, type, name) => {
-    const media = document.getElementById('mainMediaContainer');
-    const playerView = document.getElementById('coursePlayerView');
-    const readerView = document.getElementById('documentReaderView');
+window.openFile = async (url, type, fileName) => {
+    const mediaContainer = document.getElementById("mainMediaContainer");
+    const playerView = document.getElementById("coursePlayerView");
+    const readerView = document.getElementById("documentReaderView");
 
-    // Reset views
-    media.innerHTML = ""; 
-
+    // 1️⃣ AGAR VIDEO HAI
     if (type.includes("video")) {
-        // Video Auto-play fix
-        media.innerHTML = `
-            <video id="activeVideo" controls autoplay controlsList="nodownload" 
-           oncontextmenu="return false;" style="width:100%;height:100%;">
-                <source src="${url}" type="${type}">
-                Your browser does not support the video tag.
+
+        mediaContainer.innerHTML = `
+            <video id="courseVideoPlayer" src="${url}" controls autoplay controlsList="nodownload" 
+                   style="width:100%; height:100%; background:#000;">
             </video>`;
         
-        // Force play logic
-        const video = document.getElementById('activeVideo');
-        video.play().catch(err => console.log("Autoplay blocked, needs user click"));
+        const v = document.getElementById('courseVideoPlayer');
+        v.play().catch(e => console.log("Autoplay policy restricted."));
+
+
+        readerView.classList.add('hidden');
+        playerView.classList.remove('hidden');
     } 
+    
+    // 2️⃣ AGAR PDF DOCUMENT HAI
     else if (type.includes("pdf")) {
-        // PDF Open logic
-        playerView.classList.add('hidden'); // Player chhupao
-        readerView.classList.remove('hidden'); // Reader dikhao
-        document.getElementById('readerDocTitle').innerText = name;
+        const existingVideo = document.getElementById('courseVideoPlayer');
+        if (existingVideo) existingVideo.pause();
+
+        playerView.classList.add('hidden');
+        readerView.classList.remove('hidden');
+        document.getElementById('readerDocTitle').innerText = fileName;
 
         const container = document.getElementById('pdfRenderer');
-        container.innerHTML = "<p style='color:#333; padding:20px;'>Loading Document...</p>";
+        
+        // 🔥 FIX 1: Zoom Wrapper (Jisko hum ungliyon se bada/chhota karenge)
+        container.innerHTML = '<div id="pdfZoomWrapper" style="transform-origin: top center; transition: transform 0.2s ease-out;"><div style="color:#333; padding:20px;">Loading Document...</div></div>';
+        const zoomWrapper = document.getElementById('pdfZoomWrapper');
 
         try {
-            // pdfjsLib use karke render
             const loadingTask = pdfjsLib.getDocument(url);
             const pdf = await loadingTask.promise;
-            container.innerHTML = ""; // Clear loader
+            zoomWrapper.innerHTML = ''; 
 
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const viewport = page.getViewport({ scale: 1.5 });
-                const canvas = document.createElement("canvas");
-                const context = canvas.getContext("2d");
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const canvas = document.createElement('canvas');
+                const viewport = page.getViewport({ scale: 2.5 }); // High-Res render
+                const context = canvas.getContext('2d');
 
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
+                canvas.style.width = "100%"; 
+                canvas.style.height = "auto";
                 canvas.style.display = "block";
                 canvas.style.margin = "10px auto";
-                canvas.style.maxWidth = "100%";
-                container.appendChild(canvas);
+                canvas.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+                
+                zoomWrapper.appendChild(canvas); // Canvas ko wrapper me daalo
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+            } 
 
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const canvas = document.createElement('canvas');
+                const viewport = page.getViewport({ scale: 2.5 }); // High-Res render
+                const context = canvas.getContext('2d');
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                canvas.style.width = "100%"; 
+                canvas.style.height = "auto";
+                canvas.style.display = "block";
+                canvas.style.margin = "10px auto";
+                canvas.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+                
+                zoomWrapper.appendChild(canvas); 
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
             }
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const canvas = document.createElement('canvas');
+                
+                // 🔥 FIX: Render at High Resolution (2.5x)
+                const viewport = page.getViewport({ scale: 2.5 }); 
+                const context = canvas.getContext('2d');
+
+                // Canvas ki actual internal size badi rakho
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // 🔥 FIX: CSS se usko screen ke size mein fit kar do (Anti-aliasing)
+                canvas.style.width = "100%"; 
+                canvas.style.height = "auto";
+                canvas.style.display = "block";
+                canvas.style.margin = "10px auto";
+                canvas.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+                
+                container.appendChild(canvas);
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+            }
+            
         } catch (e) {
             console.error("PDF Error:", e);
-            container.innerHTML = "<p style='color:red;'>Failed to load PDF. Check Supabase CORS settings.</p>";
+            container.innerHTML = '<div style="color:red; padding:20px;">Error loading PDF. Please check connection.</div>';
         }
     }
 };
@@ -506,81 +556,68 @@ async function finalizeUserCreation(flow) {
 // ===============================
 // RAZORPAY & TRANSACTIONS
 // ===============================
- async function payWithRazorpay() {
-
+async function payWithRazorpay() {
     try {
         showPremiumModal("Initializing...", "Preparing payment...", "progress");
 
-        // 🔥 STEP 1: Create Order (FAKE for now - backend recommended)
-        const order = {
-            id: "order_" + Date.now(),   // temporary (backend me real order banana chahiye)
-            amount: 49900
-        };
-
         var options = {
-            key: "rzp_test_SOagilh6j038Ec",
-            amount: order.amount,
+            key: "rzp_test_SOagiIh6jO38Ec",
+            amount: 49900, // ₹499 in paise
             currency: "INR",
             name: "Pax Learnify",
             description: "Account Creation Fee",
-            order_id: order.id,   // 🔥 IMPORTANT
             image: "https://uploads.onecompiler.io/4444s4cvz/44d69n6eu/1000014528.png",
 
             handler: async function (response) {
                 try {
-                    showPremiumModal("Verifying...", "Please wait...", "progress");
+                    console.log("✅ PAYMENT SUCCESS:", response);
 
-                    console.log("Payment Success Response:", response);
+                    showPremiumModal("Processing...", "Saving transaction...", "progress");
 
-                    // 🔥 (Optional but better) Fake verification success
-                    const isValid = response.razorpay_payment_id ? true : false;
-
-                    if (!isValid) {
-                        showPremiumModal("Payment Failed", "Verification failed", "alert");
-                        return;
+                    if (!response.razorpay_payment_id) {
+                        return showPremiumModal("Payment Failed ❌", "No Payment ID received", "alert");
                     }
 
-                    // ✅ SAVE TRANSACTION
-                    await db.from('transactions').insert([{
-                        email: tempRegisterData.email,
+                    const { error } = await db.from('transactions').insert([{
+                        email: tempRegisterData.email || "guest@payment.com",
                         amount: 499,
                         paymentId: response.razorpay_payment_id,
                         status: "Success",
                         timestamp: Date.now()
                     }]);
 
-                    closePremiumModal();
+                    if (error) {
+                        console.error("❌ DB ERROR:", error);
+                        return showPremiumModal("Database Error ❌", error.message, "alert");
+                    }
 
-                    // ✅ FINAL STEP
+                    closePremiumModal();
+                    showPremiumModal("Success 🎉", "Account created successfully!", "alert");
+
                     finalizeUserCreation('user');
 
-                } catch (error) {
-                    console.error(error);
-                    showPremiumModal("Error", "Payment done but DB error.", "alert");
+                } catch (err) {
+                    console.error("🔥 HANDLER ERROR:", err);
+                    showPremiumModal("Critical Error ❌", err.message || JSON.stringify(err), "alert");
                 }
             },
 
             prefill: {
-                name: tempRegisterData.name,
-                email: tempRegisterData.email
+                name: tempRegisterData?.name || "Pax Learner",
+                // 🔥 FIX: Added fallback email to prevent crash
+                email: tempRegisterData?.email || "newstudent@paxlearnify.com"
             },
 
-            theme: {
-                color: "#8e2de2"
-            }
+            theme: { color: "#8e2de2" }
         };
 
         var rzp1 = new Razorpay(options);
 
-        // ❌ FAILURE HANDLER IMPROVED
         rzp1.on('payment.failed', function (response) {
-            console.log("Payment Failed:", response);
-
+            console.error("❌ PAYMENT FAILED FULL:", response);
             showPremiumModal(
                 "Payment Failed ❌",
-                `Reason: ${response.error.description}
-Code: ${response.error.code}
-Step: ${response.error.step}`,
+                `Reason: ${response.error.description}\nCode: ${response.error.code}`,
                 "alert"
             );
         });
@@ -589,39 +626,39 @@ Step: ${response.error.step}`,
         rzp1.open();
 
     } catch (err) {
-        console.error(err);
-        showPremiumModal("Error", "Payment init failed", "alert");
+        console.error("🔥 INIT ERROR:", err);
+        closePremiumModal();
+        showPremiumModal("Error", "Payment initialization failed: " + err.message, "alert");
     }
 }
 
-            
- async function buyCourse(courseId, price, title) {
-
+async function buyCourse(courseId, price, title) {
     try {
         showPremiumModal("Initializing...", "Preparing payment...", "progress");
 
-        const order = {
-            id: "order_" + Date.now(),
-            amount: parseInt(price) * 100
-        };
+        // 🔥 Safe Price Parsing (Rupees to Paise)
+        const amountInPaise = Math.round(Number(price) * 100);
+        
+        // 🔥 Safety check to prevent NaN errors before opening Razorpay
+        if (isNaN(amountInPaise) || amountInPaise <= 0) {
+            closePremiumModal();
+            return showPremiumModal("Error", "Invalid course price.", "alert");
+        }
 
         var options = {
-            key: "rzp_test_SOagilh6j038Ec",
-            amount: order.amount,
+            key: "rzp_test_SOagiIh6jO38Ec",
+            amount: amountInPaise,
             currency: "INR",
             name: "Pax Learnify",
-            description: "Unlock Course: " + title,
-            order_id: order.id,
+            description: "Unlock Course: " + title, 
+            image: "https://uploads.onecompiler.io/4444s4cvz/44d69n6eu/1000014528.png",
 
             handler: async function (response) {
                 try {
                     showPremiumModal("Verifying...", "Unlocking course...", "progress");
 
-                    console.log("Course Payment:", response);
-
                     if (!response.razorpay_payment_id) {
-                        showPremiumModal("Failed", "Payment verification failed", "alert");
-                        return;
+                        return showPremiumModal("Failed", "Payment verification failed", "alert");
                     }
 
                     // ✅ SAVE TRANSACTION
@@ -637,7 +674,9 @@ Step: ${response.error.step}`,
                     }]);
 
                     // ✅ UPDATE USER ACCESS
-                    if (!currentUser.purchased) currentUser.purchased = [];
+                    if (!currentUser.purchased || !Array.isArray(currentUser.purchased)) {
+                        currentUser.purchased = [];
+                    }
                     currentUser.purchased.push(courseId);
 
                     await db.from('users')
@@ -649,42 +688,36 @@ Step: ${response.error.step}`,
                     closePremiumModal();
                     showPremiumModal("Success 🎉", "Course Unlocked!", "alert");
 
+                    // Refresh Dashboard & Open Course
                     renderUserDashboard();
                     openCoursePlayer(courseId);
 
                 } catch (err) {
                     console.error(err);
-                    showPremiumModal("Error", "Payment done but DB error", "alert");
+                    showPremiumModal("Error", "Payment successful but Database error", "alert");
                 }
             },
-
             prefill: {
-                name: currentUser.name,
-                email: currentUser.email || ""
+                name: currentUser?.name || "Pax Learner",
+                // 🔥 FIX: Empty string pass hone se Razorpay crash karta hai, isliye fallback
+                email: (currentUser && currentUser.email) ? currentUser.email : "student@paxlearnify.com"
             },
-
             theme: { color: "#8e2de2" }
         };
 
         var rzp1 = new Razorpay(options);
 
         rzp1.on('payment.failed', function (response) {
-            console.log(response);
-
-            showPremiumModal(
-                "Payment Failed ❌",
-                `Reason: ${response.error.description}
-Code: ${response.error.code}`,
-                "alert"
-            );
+            showPremiumModal("Payment Failed ❌", `Reason: ${response.error.description}`, "alert");
         });
 
         closePremiumModal();
         rzp1.open();
 
     } catch (err) {
-        console.error(err);
-        showPremiumModal("Error", "Payment init failed", "alert");
+        console.error("Razorpay Init Error:", err);
+        closePremiumModal();
+        showPremiumModal("Error", "Payment initialization failed: " + err.message, "alert");
     }
 }
 
@@ -821,7 +854,7 @@ function togglePriceInput() {
 
 // ===============================
 // PLAYER & DASHBOARDS
-// =============================== 
+// ===============================
 async function openCoursePlayer(courseId) {
     activeCourseId = courseId;
 
@@ -852,6 +885,15 @@ async function openCoursePlayer(courseId) {
     // ===== NAVIGATION =====
     document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
     document.getElementById('coursePlayerView').classList.remove('hidden');
+    
+    const editToggleSection = document.getElementById('editToggleSection');
+    if (editToggleSection) {
+        if (isAdmin) {
+            editToggleSection.classList.remove('hidden'); // Admin ko dikhao
+        } else {
+            editToggleSection.classList.add('hidden');    // User se chhupao
+        }
+    }
 
     // ===== BASIC INFO & EDIT MODE =====
     const titleEl = document.getElementById('playerTitle');
@@ -1039,7 +1081,7 @@ async function renderUserDashboard() {
             const isPurchased = currentUser.purchased.some(pId => String(pId) === String(c.id));
             const hasAccess = isFree || isPurchased || currentUser.role === 'admin';
             
-            // File links (Video/Doc) nikalna
+            // File links (Video/Doc) 
             let filesHTML = c.files ? c.files.map(f => `<div class="nac-file-link">${f.type.includes('pdf') ? 'Doc' : 'Video'}</div>`).join('') : '';
             
             // CARD DESIGN 🔥
@@ -1062,31 +1104,38 @@ async function renderUserDashboard() {
                         </div>
                     </div>
                     
-                    <div class="nac-bottom-row" style="margin-top: 10px;">
+                    <div class="course-notch ${hasAccess ? 'notch-unlocked' : 'notch-locked'}">
                         ${hasAccess 
-                            ? `<button class="nac-active-btn" style="width:100%; border-radius:10px;">Play Course <i class="fas fa-play"></i></button>` 
-                            : `<button class="btn-glow" style="margin:0; padding:10px; font-size:0.9rem; border-radius:10px;">Buy to Unlock</button>`}
+                            ? '<i class="fas fa-play-circle" style="margin-right:8px; font-size: 1.1rem;"></i> Play Course' 
+                            : '<i class="fas fa-lock" style="margin-right:8px;"></i> Locked'}
                     </div>
                     
                 </div>
             </div>`;
             
             // Sort into correct sections
+            store.innerHTML += cardHTML;
+
+            // Dashboard ke Unlocked/Locked sections ke liye sort karo
             if (hasAccess) { 
                 unlocked.innerHTML += cardHTML; 
                 hasUnlocked = true; 
             } else { 
                 locked.innerHTML += cardHTML; 
-                store.innerHTML += cardHTML; 
                 hasLocked = true; 
             }
         });
 
         // Empty states
         if (!hasUnlocked) unlocked.innerHTML = '<div style="color:#aaa; padding:10px;">No unlocked courses yet. Explore below!</div>';
-        if (!hasLocked) { 
+        
+        if (!hasLocked) {
             locked.innerHTML = '<div style="color:#aaa; padding:10px;">You have unlocked all available courses!</div>'; 
-            store.innerHTML = '<div style="color:#aaa; padding:10px;">Store is empty. You own everything!</div>'; 
+        }
+
+        // Store ka empty state tabhi dikhega jab database mein literally 0 courses honge
+        if (courses.length === 0) {
+             store.innerHTML = '<div style="color:#aaa; padding:10px;">Store is currently empty. More courses coming soon!</div>';
         }
 
     } catch (error) {

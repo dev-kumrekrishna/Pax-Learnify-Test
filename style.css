@@ -102,7 +102,20 @@ table { width: 100%; border-collapse: collapse; } th, td { padding: 15px; text-a
 
 /* === NEW COURSE PLAYER (WHITE MODE) === */
 .white-mode-layout { background-color: #ffffff; color: #333; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; overflow-y: auto; padding: 0; }
-.media-header { width: 100%; aspect-ratio: 16 / 9; background: #000; position: relative; max-height: 50vh; }
+/* === YOUTUBE STYLE STICKY VIDEO HEADER === */
+.media-header { 
+    width: 100%; 
+    aspect-ratio: 16 / 9; 
+    background: #000; 
+    
+    /* 🔥 Yeh 3 lines jadoo karengi 🔥 */
+    position: sticky; 
+    top: 0; 
+    z-index: 1500; /* Content ke upar rakhne ke liye */
+    
+    max-height: 50vh; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Scroll hone par halki si shadow */
+}
 .media-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .media-content img { width: 100%; height: 100%; object-fit: cover; }
 .media-content video { width: 100%; height: 100%; }
@@ -182,7 +195,10 @@ input:checked + .slider:before { transform: translateX(24px); }
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-.nac-mid-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; margin-bottom: 10px; }
+.nac-mid-row { display: flex; 
+    justify-content: space-between;
+    align-items: flex-end; 
+    margin-top: auto; margin-bottom: 10px; }
 .nac-files { display: flex; flex-direction: column; gap: 4px; }
 .nac-file-link { color: #00c3ff; text-decoration: underline; font-size: 0.95rem; font-weight: 500; margin: 0; pointer-events: none;}
 .nac-price { color: #999; font-size: 1rem; font-weight: 500; margin-bottom: 2px; }
@@ -199,7 +215,6 @@ input:checked + .slider:before { transform: translateX(24px); }
 .store-grid .nac-file-link { font-size: 0.75rem; }
 .store-grid .nac-price { font-size: 0.85rem; }
 .store-grid .nac-active-btn { font-size: 0.75rem; padding: 5px 12px; }
-
 /* === EDITABLE FIELDS (WHITE MODE FIX) === */
 .editable-field[contenteditable="true"] {
     border: 1px dashed var(--neon-purple);
@@ -213,4 +228,175 @@ input:checked + .slider:before { transform: translateX(24px); }
 .editable-field[contenteditable="true"]:focus {
     background: rgba(142, 45, 226, 0.1);
     box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-                          }
+}
+/* === REFINED PREMIUM NOTCH (Patla + Flared Bottom - APPROX ROUNDED TOP) === */
+.course-notch {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%; /* Patla 60% standard geometry */
+    height: 25px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    z-index: 10;
+    transition: all 0.3s ease;
+    
+    padding-top: 5px; 
+
+    border-top-left-radius: 50px;
+    border-top-right-radius: 50px;
+
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+
+    clip-path: polygon(15.5% 10%, 18% 0%, 82% 0%, 84.5% 10%, 100% 100%, 0% 100%);
+}
+
+/* 🟢 UNLOCKED: Gradient Green (Updated Premium Gradient) */
+.notch-unlocked {
+    background: linear-gradient(135deg, #00b09b, #06c93d); 
+    color: #ffffff;
+}
+
+/* ⚪ LOCKED: Gradient Grey (Updated Darker Gradient) */
+.notch-locked {
+    background: linear-gradient(135deg, #5c5c66, #2b2b36); 
+    color: #a0a0aa;
+}
+
+.new-admin-card:hover .course-notch {
+    height: 25px; 
+    filter: brightness(1.15); 
+}
+
+/* ==========================================================================
+   🔥 COMPREHENSIVE STORE GRID CARDS SCALING (4:5 Ratio + Internal content adjustment) 🔥
+   Isko style.css ke end mein replace karein.
+   ========================================================================== */
+
+/* 1. Set the Grid Itself */
+.store-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Exactly 2 columns */
+    gap: 15px; /* Spacing between cards */
+    padding-bottom: 50px; /* Space at bottom for scrolling */
+}
+
+/* 2. Fix Card Ratio & Remove fixed height constraints */
+.store-grid .new-admin-card {
+    width: 100%;
+    aspect-ratio: 4 / 5; /* Perfect 4:5 Proportion */
+    height: auto; /* Dynamic height based on width */
+    min-height: unset; /* Override base min-height */
+    margin: 0; /* Clear margins */
+    overflow: hidden; /* Important for the complex notch flare */
+}
+
+/* 3. Scale Image Area */
+.store-grid .nac-img-wrapper {
+    height: 50%; /* Image area takes exactly half the card height */
+    min-height: unset; /* Override base constraints */
+}
+
+/* 4. Proportional Scaling for Internal Content (Padding & Typography) */
+.store-grid .nac-content {
+    padding: 10px; /* Reduced padding (from 15px) to save space */
+    /* Accommodate the scaled-down notch (smaller physical height) */
+    padding-bottom: 25px !important; /* Base padding + small notch height */
+}
+
+/* Scale Title */
+.store-grid .nac-title {
+    font-size: 0.95rem; /* Reduced from 1.2rem */
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Title only shows 2 lines max */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Scale Badge (Paid/Free) */
+.store-grid .nac-badge {
+    font-size: 0.7rem; /* Reduced from 0.8rem */
+    padding: 2px 6px; /* Reduced padding */
+}
+
+/* 5. Clean look: Description hide karke space bachao smaller cards par */
+.store-grid .nac-desc {
+    display: none !important; /* Catalog view me cleaner look deta hai */
+    /* Agar fir bhi dikhana hai toh limit karein (Hinglish: Agar aapko description chahiye, toh uncomment karein):
+    display: block !important;
+    font-size: 0.75rem;
+    -webkit-line-clamp: 1;
+    margin-top: 5px;
+    */
+}
+
+/* 6. Scale Mid Row (Icons & Price) */
+.store-grid .nac-mid-row {
+    margin-top: 5px !important; /* Reduced margin */
+    gap: 5px; /* Closer icons and price */
+}
+
+/* Scale Icon Container */
+.store-grid .nac-files {
+    gap: 3px; /* Icons closer together */
+}
+
+/* Scale Icons */
+.store-grid .nac-files i {
+    font-size: 0.9rem !important; /* Reduced icon size */
+}
+
+/* Scale Price */
+.store-grid .nac-price-tag {
+    font-size: 1rem !important; /* Reduced from 1.3rem */
+    font-weight: 700;
+}
+
+/* ==================================================
+   🔥 Critical Design Element: Flared Notch Scaling 🔥
+   This scales down the physical size while
+   preserving the complex flared visual geometry.
+   ================================================== */
+.store-grid .course-notch {
+    /* Scale physical size down significantly */
+    width: 75%; /* Widened proportionally to the smaller card width */
+    height: 20px; /* Reduced physical height */
+    font-size: 0.75rem; /* Reduced font size */
+    padding-top: 3px; /* Vertical alignment fix */
+
+    /* Preserve complex visual shape (flared top approximation with border-radius)
+       and complex geometric flare (clip-path polygon logic).
+
+       Visual Shape (Top softness):
+       Use a smaller radius proportional to the physical height.
+       The clip-path polygon handles actual edges, so border-radius only softnes the top 'mask'.
+    */
+    border-top-left-radius: 12px; /* Soften top curve for smaller height */
+    border-top-right-radius: 12px; /* Soften top curve for smaller height */
+    border-bottom-left-radius: 0; /* Sharp flared connection base */
+    border-bottom-right-radius: 0; /* Sharp flared connection base */
+
+    /* Geometric Flare (clip-path): The flare logic coordinates just work.
+       Preserved from previous turn to maintain the specific design flared points logic.
+       Polygon order: top-leftSide, top-rightSide, bottom-rightFlare, bottom-leftFlare */
+    clip-path: polygon(15.5% 10%, 18% 0%, 82% 0%, 84.5% 10%, 100% 100%, 0% 100%);
+}
+
+/* Maintain Icon scaling within scaled Notch */
+.store-grid .course-notch i {
+    font-size: 0.75rem !important;
+    margin-right: 4px !important;
+}
+
+/* Hover/Click state for scaled cards: don't stretch height */
+.store-grid .new-admin-card:hover .course-notch {
+    height: 20px !important; /* Preserve scaled height */
+    filter: brightness(1.2); /* Maintain subtle glow effect */
+}
