@@ -125,16 +125,16 @@ window.adminAddFiles = async () => {
     }
 };
 window.adminChangeBanner = async () => {
-    const input = document.getElementById("bannerInput"); // HTML me input banana padega
+    const input = document.getElementById("bannerInput");
     if (!input.files.length) return;
 
     const file = input.files[0];
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
 
     showPremiumModal("Uploading...", "Updating course banner...", "progress");
 
     try {
-        // Upload new banner
-        const path = `public/banner_${Date.now()}_${file.name}`;
+        const path = `public/banner_${Date.now()}_${cleanFileName}`;
         const { data, error } = await supabaseClient
             .storage
             .from('thumbnails')
@@ -147,19 +147,24 @@ window.adminChangeBanner = async () => {
             .from('thumbnails')
             .getPublicUrl(data.path).data.publicUrl;
 
-        // Update course thumb (banner)
-        await db.from('courses')
+        // 🔥 THE FIX: Removed Number() here. activeCourseId is sent exactly as it is (a UUID string).
+        const { error: dbError } = await db.from('courses')
             .update({ thumb: url })
-            .eq('id', activeCourseId);
+            .eq('id', activeCourseId); 
+
+        if (dbError) throw dbError;
 
         closePremiumModal();
-        openCoursePlayer(activeCourseId);
+        await openCoursePlayer(activeCourseId);
 
         showPremiumModal("Success", "Banner updated!", "alert");
 
     } catch (e) {
+        console.error("Banner Upload Error:", e);
         closePremiumModal();
-        showPremiumModal("Error", "Banner update failed.", "alert");
+        showPremiumModal("Error", "Banner update failed: " + e.message, "alert");
+    } finally {
+        input.value = "";
     }
 };
 window.saveCourseDetails = async () => {
@@ -808,8 +813,12 @@ async function createCourse() {
 
     try {
         if(thumbFile){
+            // Add this line to clean the name
+            const cleanFileName = thumbFile.name.replace(/[^a-zA-Z0-9.]/g, "_");
             updateUploadProgress(30, "Uploading Cover Image...");
-            const { data, error } = await supabaseClient.storage.from('thumbnails').upload(`public/${Date.now()}_${thumbFile.name}`, thumbFile);
+            
+            // Use cleanFileName in the path
+            const { data, error } = await supabaseClient.storage.from('thumbnails').upload(`public/${Date.now()}_${cleanFileName}`, thumbFile);
             if(error) throw error;
             thumbUrl = supabaseClient.storage.from('thumbnails').getPublicUrl(data.path).data.publicUrl;
         }
@@ -1106,7 +1115,7 @@ async function renderUserDashboard() {
                     
                     <div class="course-notch ${hasAccess ? 'notch-unlocked' : 'notch-locked'}">
                         ${hasAccess 
-                            ? '<i class="fas fa-play-circle" style="margin-right:8px; font-size: 1.1rem;"></i> Play Course' 
+                            ? '' 
                             : '<i class="fas fa-lock" style="margin-right:8px;"></i> Locked'}
                     </div>
                     

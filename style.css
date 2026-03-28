@@ -257,11 +257,6 @@ input:checked + .slider:before { transform: translateX(24px); }
     clip-path: polygon(15.5% 10%, 18% 0%, 82% 0%, 84.5% 10%, 100% 100%, 0% 100%);
 }
 
-/* 🟢 UNLOCKED: Gradient Green (Updated Premium Gradient) */
-.notch-unlocked {
-    background: linear-gradient(135deg, #00b09b, #06c93d); 
-    color: #ffffff;
-}
 
 /* ⚪ LOCKED: Gradient Grey (Updated Darker Gradient) */
 .notch-locked {
